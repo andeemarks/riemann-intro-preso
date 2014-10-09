@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>Clojure Melbourne - Riemann</title>
+
+        <meta name="description" content="Introduction to ThoughtWorks XConf - Sydney 2014">
+        <meta name="author" content="Andy Marks">
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <link rel="stylesheet" href="css/reveal.min.css">
+        <link rel="stylesheet" href="css/theme/night.css" id="theme">
+        <link rel="stylesheet" href="css/xconf.css">
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/zenburn.css">
+
+        <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+        <script>
+            if( window.location.search.match( /print-pdf/gi ) ) {
+                var link = document.createElement( 'link' );
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = 'css/print/pdf.css';
+                document.getElementsByTagName( 'head' )[0].appendChild( link );
+            }
+        </script>
+
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <div class="slides">
+                <section>
+                    <h1>Riemann</h1>
+                    <p>
+                        <code>http://aphyr.github.io/riemann/</code>
+                    </p>
+                    <p>
+                        <small>Andy Marks / @andeemarks</small>
+                    </p>
+                    <blockquote class="fragment" cite="https://github.com/aphyr/riemann/">
+                    A Clojure-based network event stream processing system
+                    </blockquote>
+                </section>
+
+                <section>
+                    <h2>Background</h2>
+                    <img src="http://aphyr.github.io/riemann/images/riemann-arch-diagram.png"/>
+
+                    <aside class="notes">
+                        Monitors port 5555, events sent via protocol buffers over TCP or UDP.
+                    </aside>
+                </section>
+                <section>
+                    <h2>Motivation</h2>
+                    <blockquote cite="http://aphyr.github.io/riemann/">
+                    "Riemann aggregates events from your servers and applications with a <p class="fragment highlight-red visible">powerful stream processing language</p>"
+                    </blockquote>
+
+                    <blockquote cite="http://aphyr.github.io/riemann/">
+                    <p class="fragment">We might be developers... but are we "just" developers</p>
+                    </blockquote>
+                </section>      
+                <section>
+                    <h2>Objective</h2>
+                    <p>Scratch the surface</p>
+                </section>      
+                <section>
+                    <h2>Key Concepts</h2>
+                    <p class="fragment"><em>Service</em> - entity sending events</p>
+                    <p class="fragment"><em>Event</em> - struct of fields describing event</p>
+                    <p class="fragment"><em>Stream</em> - pipelines for event flows</p>
+                    <p class="fragment"><em>Index</em> - table of the current state of all tracked services, indexed by host + service</p>
+                </section>
+                <section>
+                    <h2>Anatomy of an Event</h2>
+                    <pre><code data-trim class="clojure">
+(defstruct event 
+    :host           ; "web-server-4"
+    :service        ; "apache"
+    :state          ; "ok"
+    :time           ; 1412679529133
+    :description    ; "/index.html" 
+    :tags           ; ["http" "web"]
+    :metric         ; 200
+    :ttl)           ; 5
+                    </code></pre>
+
+                    <small>
+                    <ul>
+                        <li>Actual declaration in <code>https://github.com/jdmaturen/reimann/blob/master/proto/riemann/proto.proto</code></li>
+                        <li>Arbitrary custom events also supported</li>
+                    </ul>
+                    </small>
+                </section>
+
+                <section>
+                    <h2>Configuration</h2>
+                    <code>(/etc/riemann/riemann.config)</code>
+                    <pre><code data-trim class="clojure">
+(let [host "127.0.0.1"]
+  (tcp-server {:host host})
+  (udp-server {:host host})
+  (ws-server  {:host host}))
+
+(periodically-expire 5)
+
+(streams prn)
+                    </code></pre>
+                </section>
+                <section>
+                    <h2>Examples</h2>
+                    <img src="img/riemann-demo-method.png" height="500">
+                    <aside class="notes">
+                        4 terms; riemann, riemann-dash, riemann-health, repl.
+                    </aside>
+                </section>
+
+<!--                 <section>
+                    <h3>Appendix: Dependencies</h3>
+                    <pre><code data-trim class="clojure">
+                    (defproject riemann "0.0.3-SNAPSHOT"
+                    :dependencies [
+                        [org.clojure/math.numeric-tower "0.0.1"]
+                        [org.clojure/algo.generic "0.1.0"]
+                        [org.clojure/tools.logging "0.2.3"]
+                        [log4j/log4j "1.2.16"]
+                        [log4j/apache-log4j-extras "1.0"]
+                        [aleph "0.2.1-alpha2-SNAPSHOT"]
+                        [io.netty/netty "3.3.0.Final"]
+                        [protobuf "0.6.0-beta7"]
+                        [org.antlr/antlr "3.2"]
+                        [com.boundary/high-scale-lib "1.0.3"]
+                        [clj-time "0.3.4"]
+                        [com.draines/postal "1.7-SNAPSHOT"] ])
+                    </code></pre>
+                    <aside class="notes">
+                        aleph - asynch comms over WebSockets, UDP, TPC
+                        netty - NIO client server framework
+                        high-scale-lib - replacement for java.util.concurrent.*
+                    </aside>
+                </section>
+ -->
+                <section>
+                    <h3>Appendix: Language Bindings</h3>
+                    <ul>
+                        <li>Clojure, C, C++, C#
+                        <li>Erlang
+                        <li>Go
+                        <li>Java
+                        <li>Node
+                        <li>OCaml
+                        <li>Perl, Python
+                        <li>Ruby
+                        <li>Scala
+                    </ul>
+                </section>
+                <section>
+                    <h3>Appendix: Event Source Support</h3>
+                    <ul>
+                        <li>Cassandra, Chef, Collectd
+                        <li>Ganglia, Graphite
+                        <li>HBase, Himpy
+                        <li>JMX, JVM Profiling
+                        <li>Kiries
+                        <li>Logstash
+                        <li>Monitorlib, Mysql
+                        <li>Puppet
+                        <li>Syslog
+                    </ul>
+                </section>
+                <section>
+                    <h3>More?</h3>
+                    <ul>
+                        <li>http://player.vimeo.com/video/67181466</li>
+                    </ul>
+                </section>
+                <section>
+                    <h1>Thanks</h1>
+                    <p>
+                        <small>Andy Marks / @andeemarks</small>
+                    </p>
+                </section>
+            </div>
+
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.min.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: 'cube' || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+                // Parallax scrolling
+                // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+                // parallaxBackgroundSize: '2100px 900px',
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+                    { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>

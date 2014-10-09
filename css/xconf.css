@@ -1,0 +1,11 @@
+table.pipelinedependencies tr {
+        height: 200px;
+        /* background-color:#76A0D3; */
+}
+table.pipelinedependencies td {
+    vertical-align: middle;
+}
+
+.reveal pre {
+	font-size: 0.8em;
+}
