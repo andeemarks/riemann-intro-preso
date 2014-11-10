@@ -6,7 +6,7 @@
 
         <title>InfrastructureCodes - Intro to Riemann</title>
 
-        <meta name="description" content="Introduction to ThoughtWorks XConf - Sydney 2014">
+        <meta name="description" content="Introduction to Riemann - Infracoders, November 2014">
         <meta name="author" content="Andy Marks">
 
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -40,19 +40,24 @@
                 <section>
                     <h1>Riemann</h1>
                     <p>
-                        <code>http://aphyr.github.io/riemann/</code>
+                        <small><code>http://aphyr.github.io/riemann/</code></small>
                     </p>
                     <p>
-                        <small>Andy Marks / @andeemarks</small>
+                        <small>@andee_marks</small>
                     </p>
-                    <blockquote class="fragment" cite="https://github.com/aphyr/riemann/">
+                </section>
+
+                <section>
+                    <h2>Definition</h2>
+                    <blockquote cite="https://github.com/aphyr/riemann/">
                     A network event stream processing system
                     </blockquote>
                 </section>
 
                 <section>
                     <h2>Background</h2>
-                    <img src="http://aphyr.github.io/riemann/images/riemann-arch-diagram.png"/>
+                    <!-- <img src="http://aphyr.github.io/riemann/images/riemann-arch-diagram.png"/> -->
+                    <img src="img/riemann-overview.png" height="400" />
 
                     <aside class="notes">
                         Monitors port 5555, events sent via protocol buffers over TCP or UDP.
@@ -71,48 +76,119 @@
                 </section>
                 <section>
                     <h2>Anatomy of an Event</h2>
+<!--                     <table>
+                        <thead>
+                            <tr>
+                                <td>Field</td>
+                                <td>Example</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>host</td>
+                                <td>web-server-4</td>
+                            </tr>
+                            <tr>
+                                <td>service</td>
+                                <td>apache</td>
+                            </tr>
+                        </tbody>
+                    </table>
+ -->
+                    <small>
+                        (Arbitrary custom events also supported)
+                    </small>
                     <pre><code data-trim class="clojure">
 (defstruct event 
-    :host           ; "web-server-4"
-    :service        ; "apache"
-    :state          ; "ok"
-    :time           ; 1412679529133
-    :description    ; "/index.html" 
-    :tags           ; ["http" "web"]
-    :metric         ; 200
-    :ttl)           ; 5
+    :host         "web-server-4"
+    :service      "apache"
+    :state        "ok"
+    :time         1412679529133
+    :description  "/index.html" 
+    :tags         ["http" "web"]
+    :metric       200
+    :ttl          5)
                     </code></pre>
 
-                    <small>
-                    <ul>
-                        <li>Arbitrary custom events also supported</li>
-                    </ul>
-                    </small>
-                </section>
-
-                <section>
-                    <h2>Configuration</h2>
-                    <code>(/etc/riemann/riemann.config)</code>
-                    <pre><code data-trim class="clojure">
-(let [host "127.0.0.1"]
-  (tcp-server {:host host})
-  (udp-server {:host host})
-  (ws-server  {:host host}))
-
-(periodically-expire 5)
-
-(streams prn)
-                    </code></pre>
                 </section>
                 <section>
-                    <h2>Examples</h2>
-                    <img src="img/riemann-demo-method.png" height="500">
-                    <aside class="notes">
-                        4 terms; riemann, riemann-dash, riemann-health, repl.
-                    </aside>
+                    <section>
+                        <h2>Examples</h2>
+                        <img src="img/riemann-demo-method.png" height="500">
+                        <aside class="notes">
+                            4 terms; riemann, riemann-dash, riemann-health, repl.
+                        </aside>
+                    </section>
+                    <section>
+                        <h2>Sample Events</h2>
+                        <small>(for /Users/amarks/Code/riemann/index.html)</small>
+                        <pre><code data-trim class="clojure">
+(defstruct event 
+    :host         "localhost"   ; static
+    :service      "file-size"   ; static
+    :state        "file"        ; or "dir"
+    :time         1412679529133 ; m/s since epoch
+    :description  "index.html" 
+    :tags         ["riemann" "Code" "amarks" "Users"] ; reverse order
+    :metric       7766          ; must be numeric
+    :ttl          5)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Stream filtering (1/5)</h2>
+                        <pre><code data-trim class="clojure">
+(streams
+  (where (and (service "file-size")
+              (not (tagged ".git")))
+    (fn [e] (prn  (:state e)
+                  (:metric e)
+                  (:extension e)
+                  (:tags e)
+                  (:description e)))))
+                        </code></pre>
+
+                    </section>
+                    <section>
+                        <h2>Stream splitting by state (2/5)</h2>
+
+                    </section>
+                    <section>
+                        <h2>Event injection (3/5)</h2>
+                        <pre><code data-trim class="clojure">
+(streams
+    (where (and (service "file-size")
+                (state "file")
+                (> metric 6000))
+      (with :service "big-file" index)
+      (else
+        (with :service "small-file" index))))
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Aggregation - percentiles (4/5)</h2>
+                        <pre><code data-trim class="clojure">
+(streams
+    (where (service "file-size")
+      (percentiles 5 [0.5 0.95 0.99]
+        (scale (/ 1 1024)
+          index))
+
+    index))
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Aggregation - rate (5/5)</h2>
+                        <pre><code data-trim class="clojure">
+(streams
+    (where (service "file-size")
+      (with :metric 1
+        (rate 5
+          (adjust [:service str " rate"] index)))))
+                        </code></pre>
+                    </section>
                 </section>
                 <section>
-                    <h3>Appendix: Event Source Support</h3>
+                    <h2>Event Source Support</h2>
                     <ul>
                         <li>Cassandra, Chef, Collectd
                         <li>Ganglia, Graphite
@@ -126,7 +202,7 @@
                     </ul>
                 </section>
                 <section>
-                    <h3>More?</h3>
+                    <h2>More?</h2>
                     <ul>
                         <li>http://player.vimeo.com/video/67181466</li>
                     </ul>
@@ -134,7 +210,7 @@
                 <section>
                     <h1>Thanks</h1>
                     <p>
-                        <small>Andy Marks / @andeemarks</small>
+                        <small>@andee_marks</small>
                     </p>
                 </section>
             </div>
@@ -152,14 +228,11 @@
                 controls: true,
                 progress: true,
                 history: true,
-                center: true,
+                // center: true,
+                backgroundTransition: 'slide', 
 
                 theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
-                transition: 'cube' || 'default', // default/cube/page/concave/zoom/linear/fade/none
-
-                // Parallax scrolling
-                // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
-                // parallaxBackgroundSize: '2100px 900px',
+                transition: 'page' || 'default', // default/cube/page/concave/zoom/linear/fade/none
 
                 // Optional libraries used to extend on reveal.js
                 dependencies: [
