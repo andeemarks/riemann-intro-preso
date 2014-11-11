@@ -52,6 +52,10 @@
                     <blockquote cite="https://github.com/aphyr/riemann/">
                     A network event stream processing system
                     </blockquote>
+                    <aside class="notes">
+                        Author: Kyle Kingsbury, also created Jepson
+                        Prover of data lose in RabbitMQ and ElasticSearch
+                    </aside>
                 </section>
 
                 <section>
@@ -69,34 +73,16 @@
                 </section>      
                 <section>
                     <h2>Key Concepts</h2>
-                    <p class="fragment"><em>Service</em> - entity sending events</p>
+                    <img src="img/key-concepts.png" height="500">
+<!--                     <p class="fragment"><em>Service</em> - entity sending events</p>
                     <p class="fragment"><em>Event</em> - struct of fields describing event</p>
                     <p class="fragment"><em>Stream</em> - pipelines for event flows</p>
                     <p class="fragment"><em>Index</em> - table of the current state of all tracked services, indexed by host + service</p>
-                </section>
+ -->                </section>
                 <section>
                     <h2>Anatomy of an Event</h2>
-<!--                     <table>
-                        <thead>
-                            <tr>
-                                <td>Field</td>
-                                <td>Example</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>host</td>
-                                <td>web-server-4</td>
-                            </tr>
-                            <tr>
-                                <td>service</td>
-                                <td>apache</td>
-                            </tr>
-                        </tbody>
-                    </table>
- -->
                     <small>
-                        (Arbitrary custom events also supported)
+                        (Arbitrary custom event fields also supported)
                     </small>
                     <pre><code data-trim class="clojure">
 (defstruct event 
@@ -113,14 +99,19 @@
                 </section>
                 <section>
                     <section>
-                        <h2>Examples</h2>
+                        <h2>Demo Time!</h2>
                         <img src="img/riemann-demo-method.png" height="500">
                         <aside class="notes">
                             4 terms; riemann, riemann-dash, riemann-health, repl.
+                            (Start riemann) lein run
+                            (REPL) lein repl :connect 127.0.0.1:5557
+                            (Dash) sudo riemann-dash (on path)
+                            (Update config) git checkout [branch-name]
+                            (Reload config) (riemann.bin/reload!)
                         </aside>
                     </section>
                     <section>
-                        <h2>Sample Events</h2>
+                        <h2>Event Generation</h2>
                         <small>(for /Users/amarks/Code/riemann/index.html)</small>
                         <pre><code data-trim class="clojure">
 (defstruct event 
@@ -150,6 +141,11 @@
                     </section>
                     <section>
                         <h2>Stream splitting by state (2/5)</h2>
+                        <img src="img/dash-riak.png" height="500">
+                        <aside class="notes">
+                            state = "dir"
+                            state = "file"
+                        </aside>
 
                     </section>
                     <section>
@@ -168,8 +164,8 @@
                         <h2>Aggregation - percentiles (4/5)</h2>
                         <pre><code data-trim class="clojure">
 (streams
-    (where (service "file-size")
-      (percentiles 5 [0.5 0.95 0.99]
+    (where (service "small-file")
+      (percentiles 5 [0.25 0.50 0.75]
         (scale (/ 1 1024)
           index))
 
@@ -186,6 +182,17 @@
           (adjust [:service str " rate"] index)))))
                         </code></pre>
                     </section>
+                </section>
+                <section>
+                    <h2>Rolling, Throttling, Emailing</h2>
+                    <small class="fragment">(lot of other examples at http://riemann.io/howto.html)</small>
+                    <pre><code data-trim class="clojure">
+(def tell-ops (throttle 5 3600 (email "fab@ioof.com.au")))
+
+(streams
+  (where (state "error") tell-ops)
+  (tagged "exception" tell-ops))
+                    </code></pre>                    
                 </section>
                 <section>
                     <h2>Event Source Support</h2>
